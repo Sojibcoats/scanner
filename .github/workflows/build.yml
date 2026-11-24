@@ -1,0 +1,31 @@
+name: Build APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Generate Android project
+        run: python3 make_android.py
+      - name: Build APK
+        run: gradle assembleRelease --no-daemon
+        working-directory: android-project
+      - name: Copy APK
+        run: cp android-project/app/build/outputs/apk/release/app-release.apk scanner.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: Scanner APK ${{ github.run_number }}
+          files: scanner.apk
